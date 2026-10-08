@@ -61,7 +61,9 @@ export const mutationCollector: Collector<MutationMetrics> = {
       testRunner: "vitest",
       vitest: { configFile: WRAPPER_CONFIG },
       plugins: ["@stryker-mutator/vitest-runner"],
-      mutate: [...scope.core],
+      // Globs aus der Konfiguration statt der Dateiliste: StrykerJS deutet Pfade als Glob-Muster, Dateinamen
+      // mit eckigen Klammern (Next.js-Routen) würden sonst nicht gefunden. Tests und Ausschlüsse per "!".
+      mutate: [...config.scope.core, ...[...config.scope.tests, ...config.scope.exclude].map((p) => `!${p}`)],
       coverageAnalysis: "perTest",
       reporters: ["json", "clear-text"],
       jsonReporter: { fileName: reportFile },

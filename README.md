@@ -4,7 +4,7 @@ Gemeinsames Messwerkzeug beider Teams im WPM „Software Engineering mit generat
 
 Ein Lauf nimmt den Stand eines Team-Repos zum Sprint-Stichtag, misst ihn und legt Rohdaten und Kennzahlen nachvollziehbar ab. Am Ende erzeugt `se-eval report` einen Vergleichsbericht.
 
-> **Status:** Version 0.1.0, Probelauf gegen zwei Beispiel-Repos erfolgreich (siehe „Geprüft“). Vor dem Projektstart als `v1.0` taggen; danach Änderungen nur per Pull Request mit Zustimmung beider Teams (siehe „Änderungen am Tool“).
+> **Status:** Version 0.2.0, Probelauf gegen zwei Beispiel-Repos erfolgreich (siehe „Geprüft“). Vor dem Projektstart als `v1.0` taggen; danach Änderungen nur per Pull Request mit Zustimmung beider Teams (siehe „Änderungen am Tool“).
 
 ---
 
@@ -25,16 +25,18 @@ node ../se-eval/dist/cli.js measure -t all -s p1-s1
 node ../se-eval/dist/cli.js report        # → results/bericht.md
 ```
 
-Für private Repos: `export GITHUB_TOKEN=…` (Fine-grained Token, nur lesend: *Contents*, *Pull requests*). Der Token wird nie in Logs oder Ergebnisse geschrieben.
+Für private Repos: `export GITHUB_TOKEN=…` (Fine-grained Token, nur lesend: *Contents*, *Pull requests*). Der Token wird nie in Logs oder Ergebnisse geschrieben und ist für den Code der Team-Repos (Installation, Tests) unsichtbar: Umgebungsvariablen mit TOKEN, SECRET, PASSWORD, API_KEY o. Ä. im Namen werden vor jedem Fremdaufruf entfernt.
+
+Hinter einem HTTP-Proxy: Node nutzt `HTTPS_PROXY` für die GitHub-API nicht automatisch; `export NODE_USE_ENV_PROXY=1` setzen (Node ≥ 22.21).
 
 ### Mit Docker (empfohlen für die offiziellen Messungen)
 
 Gleiche Node-, Git- und Werkzeugversionen für beide Teams; fremder Code läuft nicht direkt auf dem eigenen Rechner.
 
 ```bash
-docker build -t se-eval:0.1.0 .
-docker run --rm -v "$PWD/../evaluation:/eval" -e GITHUB_TOKEN se-eval:0.1.0 measure -t all -s p1-s1
-docker run --rm -v "$PWD/../evaluation:/eval" se-eval:0.1.0 report
+docker build -t se-eval:0.2.0 .
+docker run --rm -v "$PWD/../evaluation:/eval" -e GITHUB_TOKEN se-eval:0.2.0 measure -t all -s p1-s1
+docker run --rm -v "$PWD/../evaluation:/eval" se-eval:0.2.0 report
 ```
 
 > Das Docker-Image konnte in der Entwicklungsumgebung nicht gebaut werden (kein Zugriff auf Docker Hub). Vor der ersten Messung einmal bauen und gegen das Beispielprojekt laufen lassen.
@@ -157,6 +159,8 @@ results/
 - **Frische Arbeitskopie** je Messung (`git clone`, `npm ci`); nichts wird ins Team-Repo zurückgeschrieben.
 - **Neutrale Konfigurationen** für ESLint, TypeScript, Vitest-Coverage und Stryker; Team-Einstellungen, die Ergebnisse verschönern könnten (Lint-Regeln aus, Coverage-Ausschlüsse, Schwellen), wirken nicht.
 - **Gepinnte Versionen** (`package-lock.json`, StrykerJS-Version in der Konfiguration, Docker-Image).
+- **Bots** (`dependabot[bot]` usw.) zählen nicht als Teammitglieder (`git.excludeAuthors`).
+- **Geänderter Stichtag:** Wird ein Stichtag nach der ersten Messung geändert, verweigert das Tool die Wiederverwendung des alten Snapshots, bis mit `--refresh` neu bestimmt wird (gehört ins Änderungsprotokoll).
 - **Fehler werden ausgewiesen**, nicht verschwiegen: Fällt ein Collector aus, steht „nicht gemessen“ mit Grund im Bericht.
 - Probelauf: Zwei unabhängige Läufe auf denselben Snapshots ergaben einen identischen Bericht (bis auf den Zeitstempel).
 
@@ -177,11 +181,11 @@ results/
 
 ## Geprüft
 
-- 26 Unit-Tests für Formeln und Parser (`npm test`), u. a. Median/P90 (R-7), SUS, Mutation Score, Zeitfenster mit Sommer-/Winterzeit, CSV-Validierung, GitHub-Collector gegen simulierte API.
+- 32 Unit-Tests für Formeln, Parser und Review-Punkte (`npm test`), u. a. Median/P90 (R-7), SUS, Mutation Score, Zeitfenster mit Sommer-/Winterzeit, CSV-Validierung, GitHub-Collector gegen simulierte API, Schutz von Zugangsdaten, gleichnamige Tests, Symlink-Pfade, Bot-Commits, geänderter Stichtag.
 - End-to-End-Probelauf gegen zwei Next.js-16-Beispiel-Repos mit konstruierten Eigenschaften (instabiler Test, schwache Assertions, Duplikat, `any`/`@ts-ignore`, Team-Konfiguration mit Coverage-Ausschluss und hoher Schwelle, Merge- vs. Squash-Historie, KI-Co-Autor, zweite E-Mail-Adresse). Die selbst berechneten Kennzahlen (Git, Features, Aufwand, UX, Mutation Score, Zeitfenster) gegen Handrechnung geprüft. Nachvollziehbar mit `beispiel/` (siehe dort).
-- **Nicht** live geprüft: GitHub-API gegen ein echtes Repo, Docker-Image-Build.
-
----
+- Gleicher Bericht auf Linux x64 und Linux arm64 (Apple-Silicon-VM); zwei unabhängige Läufe ergeben denselben Bericht.
+- Next.js-Routen mit eckigen Klammern (`app/[slug]/page.tsx`) werden in allen Collectors erfasst.
+- **Nicht** geprüft: GitHub-API gegen ein echtes Repo, Docker-Image-Build, Lauf direkt unter macOS (statt in einer Linux-VM).
 
 ## Entwicklung
 

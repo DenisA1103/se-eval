@@ -69,6 +69,12 @@ export async function createSnapshot(opts: {
   const head = (await runOrThrow("git", ["rev-parse", remoteRef], { cwd: repoDir, logFile })).stdout.trim();
 
   let commit: string;
+  if (previous && previous.stichtag !== sprint.stichtag) {
+    throw new Error(
+      `Der Stichtag von ${sprint.id} wurde geändert (gespeichert: ${previous.stichtag}, Konfiguration: ${sprint.stichtag}). ` +
+        `Mit --refresh neu bestimmen und im Änderungsprotokoll vermerken.`,
+    );
+  }
   if (previous) {
     commit = previous.commit;
     const exists = await run("git", ["cat-file", "-e", `${commit}^{commit}`], { cwd: repoDir, logFile });
@@ -127,10 +133,12 @@ export function githubAuthEnv(source: string): NodeJS.ProcessEnv {
   const token = process.env.GITHUB_TOKEN;
   if (!token || !/^https:\/\/github\.com\//i.test(source)) return {};
   const basic = Buffer.from(`x-access-token:${token}`).toString("base64");
+  // Bereits gesetzte GIT_CONFIG_*-Einträge (z. B. von einer Firmen- oder CI-Umgebung) bleiben erhalten
+  const n = Number(process.env.GIT_CONFIG_COUNT ?? "0") || 0;
   return {
-    GIT_CONFIG_COUNT: "1",
-    GIT_CONFIG_KEY_0: "http.https://github.com/.extraheader",
-    GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${basic}`,
+    GIT_CONFIG_COUNT: String(n + 1),
+    [`GIT_CONFIG_KEY_${n}`]: "http.https://github.com/.extraheader",
+    [`GIT_CONFIG_VALUE_${n}`]: `AUTHORIZATION: basic ${basic}`,
     GIT_TERMINAL_PROMPT: "0",
   };
 }

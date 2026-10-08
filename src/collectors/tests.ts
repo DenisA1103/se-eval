@@ -13,7 +13,7 @@
  * Die Suite läuft `tests.runs`-mal (Standard 3). Tests, deren Ergebnis zwischen den Läufen wechselt,
  * gelten als instabil (flaky). Fehlgeschlagene Tests werden gezählt und nicht herausgerechnet.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { run } from "../lib/exec.js";
 import { matcher, slocOfFiles } from "../lib/files.js";
@@ -28,7 +28,7 @@ const VITEST_CONFIG_NAMES = [
 ];
 export const WRAPPER_CONFIG = "se-eval.vitest.config.mts";
 
-interface VitestJson {
+export interface VitestJson {
   numTotalTests: number;
   numPassedTests: number;
   numFailedTests: number;
@@ -129,13 +129,10 @@ export const testsCollector: Collector<TestMetrics> = {
       if (!existsSync(out)) throw new Error(`Vitest-Lauf ${i} lieferte keinen JSON-Bericht (Exit ${res.exitCode}), siehe raw/tests-vitest.log`);
       const json = JSON.parse(readFileSync(out, "utf8")) as VitestJson;
       if (i === 1) firstRun = json;
-      for (const file of json.testResults) {
-        for (const a of file.assertionResults) {
-          const key = `${relativeToRepo(file.name, repoDir)} › ${a.fullName}`;
-          const list = outcomes.get(key) ?? [];
-          list.push(a.status);
-          outcomes.set(key, list);
-        }
+      for (const [key, status] of testOutcomes(json, repoDir)) {
+        const list = outcomes.get(key) ?? [];
+        list.push(status);
+        outcomes.set(key, list);
       }
     }
     if (!firstRun) throw new Error("Kein Vitest-Lauf ausgewertet");
@@ -157,14 +154,16 @@ export const testsCollector: Collector<TestMetrics> = {
     let failedAny = 0;
     let failedAll = 0;
     const flakyTests: string[] = [];
+    let incomplete = 0;
     for (const [key, statuses] of outcomes) {
       const relevant = statuses.filter((s) => s === "passed" || s === "failed");
       const failed = relevant.filter((s) => s === "failed").length;
       if (failed > 0) failedAny++;
       if (failed > 0 && failed === relevant.length && relevant.length === runs) failedAll++;
       if (failed > 0 && failed < relevant.length) flakyTests.push(key);
-      if (statuses.length !== runs) warnings.push(`Test "${key}" lief nicht in allen ${runs} Läufen`);
+      if (statuses.length !== runs) incomplete++;
     }
+    if (incomplete > 0) warnings.push(`${incomplete} Test(s) liefen nicht in allen ${runs} Läufen (z. B. abgebrochene Testdatei)`);
 
     // ---------- Coverage ----------
     const coverage = readCoverage(rawDir, scope.app.length, warnings);
@@ -194,8 +193,37 @@ export const testsCollector: Collector<TestMetrics> = {
   },
 };
 
-function relativeToRepo(path: string, repoDir: string): string {
-  return path.startsWith(repoDir) ? path.slice(repoDir.length + 1) : path;
+/**
+ * Pfad relativ zum Repo. Vitest meldet echte Pfade (realpath); liegt das Arbeitsverzeichnis hinter
+ * einem Symlink (unter macOS z. B. /var → /private/var), wird auch dieser Präfix erkannt.
+ */
+export function relativeToRepo(path: string, repoDir: string): string {
+  const prefixes = [repoDir];
+  try {
+    prefixes.push(realpathSync(repoDir));
+  } catch {
+    // Verzeichnis existiert nicht (nur in Tests relevant)
+  }
+  for (const p of prefixes) if (path.startsWith(p + "/")) return path.slice(p.length + 1);
+  return path;
+}
+
+/**
+ * Ergebnis je Testfall eines Laufs. Gleichnamige Tests in derselben Datei werden durchnummeriert,
+ * damit sie über die Läufe hinweg nicht vermischt werden (sonst falsche Flaky-Erkennung).
+ */
+export function testOutcomes(json: VitestJson, repoDir: string): [string, string][] {
+  const result: [string, string][] = [];
+  for (const file of json.testResults) {
+    const seen = new Map<string, number>();
+    for (const a of file.assertionResults) {
+      const base = `${relativeToRepo(file.name, repoDir)} › ${a.fullName}`;
+      const n = (seen.get(base) ?? 0) + 1;
+      seen.set(base, n);
+      result.push([n === 1 ? base : `${base} #${n}`, a.status]);
+    }
+  }
+  return result;
 }
 
 function readPkgVersion(path: string): string {

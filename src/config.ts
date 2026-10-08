@@ -103,8 +103,15 @@ const ConfigSchema = z.object({
       aiCoAuthorPattern: z.string().default("claude|anthropic|copilot|cursor|chatgpt|openai|codex|gemini"),
       /** Regulärer Ausdruck für Feature-IDs in Branch-Namen und Commit-Nachrichten */
       featureIdPattern: z.string().default("F-\\d+"),
+      /** Regulärer Ausdruck für Autor:innen, die nicht mitgezählt werden (Bots) */
+      excludeAuthors: z.string().default("\\[bot\\]"),
     })
-    .default({ exclude: [], aiCoAuthorPattern: "claude|anthropic|copilot|cursor|chatgpt|openai|codex|gemini", featureIdPattern: "F-\\d+" }),
+    .default({
+      exclude: [],
+      aiCoAuthorPattern: "claude|anthropic|copilot|cursor|chatgpt|openai|codex|gemini",
+      featureIdPattern: "F-\\d+",
+      excludeAuthors: "\\[bot\\]",
+    }),
   /** Befehl zum Installieren der Abhängigkeiten in der Arbeitskopie */
   installCommand: z.array(z.string()).min(1).default(["npm", "ci", "--no-audit", "--no-fund"]),
 });
@@ -162,7 +169,7 @@ function validateSemantics(cfg: EvalConfig): void {
       throw new Error(`Sprint ${s.id}: Stichtag liegt vor dem Start`);
     }
   }
-  for (const pattern of [cfg.git.aiCoAuthorPattern, cfg.git.featureIdPattern]) {
+  for (const pattern of [cfg.git.aiCoAuthorPattern, cfg.git.featureIdPattern, cfg.git.excludeAuthors]) {
     try {
       new RegExp(pattern, "i");
     } catch {

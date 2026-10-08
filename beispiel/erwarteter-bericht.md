@@ -1,6 +1,6 @@
 # Evaluationsbericht (automatisch erzeugt)
 
-Evaluationsplan v1.0-probelauf · se-eval 0.1.0 · Konfiguration sha256:52a596739d40 · erzeugt 8.10.2026, 10:09:45
+Evaluationsplan v1.0-probelauf · se-eval 0.1.0 · Konfiguration sha256:94ee1588c059 · erzeugt 8.10.2026, 14:20:52
 
 > Rein deskriptiver Vergleich (je Arbeitsweise ein Team, n = 1). Unterschiede sind keine Belege für kausale Effekte der Arbeitsweise. Alle Zahlen sind aus den Rohdaten in `results/<team>/<sprint>/raw/` nachrechenbar.
 

@@ -90,7 +90,8 @@
       "coverage/**"
     ],
     "aiCoAuthorPattern": "claude|anthropic|copilot|cursor|chatgpt|openai|codex|gemini",
-    "featureIdPattern": "F-\\d+"
+    "featureIdPattern": "F-\\d+",
+    "excludeAuthors": "\\[bot\\]"
   },
   "installCommand": [
     "npm",

@@ -32,7 +32,7 @@ export function run(cmd: string, args: string[], opts: ExecOptions): Promise<Exe
   return new Promise((resolvePromise) => {
     const child = spawn(cmd, args, {
       cwd: opts.cwd,
-      env: { ...process.env, ...opts.env, FORCE_COLOR: "0", NO_COLOR: "1", CI: "true" },
+      env: { ...withoutSecrets(process.env), ...opts.env, FORCE_COLOR: "0", NO_COLOR: "1", CI: "true" },
       stdio: ["ignore", "pipe", "pipe"],
       // Eigene Prozessgruppe, damit beim Timeout auch Kindprozesse (z. B. Vitest-Worker) beendet werden
       detached: process.platform !== "win32",
@@ -68,6 +68,21 @@ export function run(cmd: string, args: string[], opts: ExecOptions): Promise<Exe
     });
     child.on("close", (code) => finish(code));
   });
+}
+
+/**
+ * Entfernt Zugangsdaten aus der Umgebung, bevor fremder Code ausgeführt wird (npm ci mit
+ * Install-Skripten, Tests, next typegen). Sonst könnte Code aus einem Team-Repo z. B. den
+ * GITHUB_TOKEN der messenden Person auslesen. Benötigte Werte (Git-Zugang beim Klonen) werden
+ * gezielt über `opts.env` übergeben.
+ */
+export function withoutSecrets(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const result: NodeJS.ProcessEnv = {};
+  for (const [k, v] of Object.entries(env)) {
+    if (/TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|PRIVATE_KEY|CREDENTIAL/i.test(k)) continue;
+    result[k] = v;
+  }
+  return result;
 }
 
 /** Beendet einen Prozess samt Prozessgruppe. */

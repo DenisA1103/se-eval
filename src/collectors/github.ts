@@ -125,14 +125,23 @@ export const githubCollector: Collector<GithubMetrics> = {
 };
 
 async function gh<T>(path: string, token: string | undefined): Promise<T> {
-  const res = await fetch(API + path, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-      "User-Agent": "se-eval",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(API + path, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "se-eval",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+  } catch (e) {
+    const proxy = process.env.HTTPS_PROXY ?? process.env.https_proxy;
+    throw new Error(
+      `GitHub-API nicht erreichbar (${(e as Error).message})` +
+        (proxy ? ". Hinter einem Proxy: Node nutzt HTTPS_PROXY nicht automatisch, NODE_USE_ENV_PROXY=1 setzen (Node ≥ 22.21)" : ""),
+    );
+  }
   if (!res.ok) {
     const remaining = res.headers.get("x-ratelimit-remaining");
     throw new Error(

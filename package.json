@@ -1,6 +1,6 @@
 {
   "name": "se-eval",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Evaluationstool für den Vergleich klassischer und agentischer Softwareentwicklung (WPM SE mit generativen KI-Agenten, HS Flensburg)",
   "scripts": {
     "build": "tsc -p tsconfig.json",

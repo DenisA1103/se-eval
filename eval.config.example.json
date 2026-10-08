@@ -6,41 +6,121 @@
       "repo": "https://github.com/OWNER/REPO-TEAM-A.git",
       "github": "OWNER/REPO-TEAM-A",
       "branch": "main",
-      "arbeitsweise": { "P1": "agentisch", "P2": "klassisch" },
-      "uxLabel": { "P1": "A", "P2": "B" }
+      "arbeitsweise": {
+        "P1": "agentisch",
+        "P2": "klassisch"
+      },
+      "uxLabel": {
+        "P1": "A",
+        "P2": "B"
+      }
     },
     "team-b": {
       "name": "Team B",
       "repo": "https://github.com/OWNER/REPO-TEAM-B.git",
       "github": "OWNER/REPO-TEAM-B",
       "branch": "main",
-      "arbeitsweise": { "P1": "klassisch", "P2": "agentisch" },
-      "uxLabel": { "P1": "B", "P2": "A" }
+      "arbeitsweise": {
+        "P1": "klassisch",
+        "P2": "agentisch"
+      },
+      "uxLabel": {
+        "P1": "B",
+        "P2": "A"
+      }
     }
   },
   "sprints": [
-    { "id": "p1-s1", "phase": "P1", "start": "2026-10-16", "stichtag": "2026-10-23T12:00:00+02:00" },
-    { "id": "p2-s1", "phase": "P2", "start": "2026-11-20", "stichtag": "2026-11-27T12:00:00+01:00" },
-    { "id": "p2-s2", "phase": "P2", "start": "2026-11-27", "stichtag": "2026-12-04T12:00:00+01:00" },
-    { "id": "p2-s3", "phase": "P2", "start": "2026-12-04", "stichtag": "2026-12-11T12:00:00+01:00" }
+    {
+      "id": "p1-s1",
+      "phase": "P1",
+      "start": "2026-10-16",
+      "stichtag": "2026-10-23T12:00:00+02:00"
+    },
+    {
+      "id": "p2-s1",
+      "phase": "P2",
+      "start": "2026-11-20",
+      "stichtag": "2026-11-27T12:00:00+01:00"
+    },
+    {
+      "id": "p2-s2",
+      "phase": "P2",
+      "start": "2026-11-27",
+      "stichtag": "2026-12-04T12:00:00+01:00"
+    },
+    {
+      "id": "p2-s3",
+      "phase": "P2",
+      "start": "2026-12-04",
+      "stichtag": "2026-12-11T12:00:00+01:00"
+    }
   ],
   "scope": {
-    "app": ["src/**/*.{ts,tsx}", "app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
-    "tests": ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}", "**/__tests__/**/*.{ts,tsx}", "tests/**/*.{ts,tsx}", "e2e/**/*.{ts,tsx}"],
-    "core": ["src/lib/**/*.ts", "lib/**/*.ts"],
-    "exclude": ["**/*.d.ts", "**/*.config.{ts,mts,js,mjs,cjs}", "**/se-eval.*"]
+    "app": [
+      "src/**/*.{ts,tsx}",
+      "app/**/*.{ts,tsx}",
+      "components/**/*.{ts,tsx}",
+      "lib/**/*.{ts,tsx}"
+    ],
+    "tests": [
+      "**/*.test.{ts,tsx}",
+      "**/*.spec.{ts,tsx}",
+      "**/__tests__/**/*.{ts,tsx}",
+      "tests/**/*.{ts,tsx}",
+      "e2e/**/*.{ts,tsx}"
+    ],
+    "core": [
+      "src/lib/**/*.ts",
+      "lib/**/*.ts"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "**/*.config.{ts,mts,js,mjs,cjs}",
+      "**/se-eval.*"
+    ]
   },
   "testTypes": {
-    "integration": ["**/*.int.test.{ts,tsx}", "tests/integration/**"],
-    "e2e": ["e2e/**"]
+    "integration": [
+      "**/*.int.test.{ts,tsx}",
+      "tests/integration/**"
+    ],
+    "e2e": [
+      "e2e/**"
+    ]
   },
-  "tests": { "runs": 3, "timeoutMinutes": 15 },
-  "mutation": { "enabled": true, "timeoutMinutes": 30, "strykerVersion": "10.0.0" },
-  "static": { "complexityThreshold": 15, "duplicateMinTokens": 50 },
+  "tests": {
+    "runs": 3,
+    "timeoutMinutes": 15
+  },
+  "mutation": {
+    "enabled": true,
+    "timeoutMinutes": 30,
+    "strykerVersion": "10.0.0"
+  },
+  "static": {
+    "complexityThreshold": 15,
+    "duplicateMinTokens": 50
+  },
   "git": {
-    "exclude": ["package-lock.json", "pnpm-lock.yaml", "yarn.lock", "next-env.d.ts", "public/**", "**/*.min.js", "**/*.snap", "coverage/**"],
+    "exclude": [
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "yarn.lock",
+      "next-env.d.ts",
+      "public/**",
+      "**/*.min.js",
+      "**/*.snap",
+      "coverage/**"
+    ],
     "aiCoAuthorPattern": "claude|anthropic|copilot|cursor|chatgpt|openai|codex|gemini",
-    "featureIdPattern": "F-\\d+"
+    "featureIdPattern": "F-\\d+",
+    "excludeAuthors": "\\[bot\\]"
   },
-  "installCommand": ["npm", "ci", "--no-audit", "--no-fund"]
+  "installCommand": [
+    "npm",
+    "ci",
+    "--no-audit",
+    "--no-fund"
+  ]
 }
