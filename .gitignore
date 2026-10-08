@@ -1,0 +1,8 @@
+node_modules/
+dist/
+work/
+*.log
+.DS_Store
+beispiel/repos/
+beispiel/results/
+beispiel/work/

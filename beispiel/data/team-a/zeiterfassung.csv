@@ -1,0 +1,8 @@
+datum;person;stunden;feature;taetigkeit
+2026-10-16;Anna Beispiel;2;Sonstiges;Setup
+17.10.2026;Anna Beispiel;3,5;F-01;Implementierung
+2026-10-18;Ben Muster;1;F-01;Review
+2026-10-19;Ben Muster;4;F-02;Implementierung
+2026-10-20;Ben Muster;2,25;F-02;Tests
+2026-10-21;Cem Probe;1,5;Sonstiges;Meeting
+2026-10-22;Cem Probe;2;F-03;Implementierung

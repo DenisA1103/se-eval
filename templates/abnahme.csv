@@ -1,0 +1,3 @@
+sprint;feature_id;checks_bestanden;checks_gesamt;notiz
+# Eine Zeile je Feature und Sprint, ausgefüllt vom bewertenden Team nach den vorab geteilten Abnahmechecks.
+p1-s1;F-01;2;3;Check 3 (Fehlermeldung bei doppelter E-Mail) schlägt fehl

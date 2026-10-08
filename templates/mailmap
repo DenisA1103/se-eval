@@ -1,0 +1,3 @@
+# Git-Mailmap: führt mehrere E-Mail-Adressen einer Person zusammen.
+# Format: Kanonischer Name <kanonische@mail> <andere@mail>
+# Vorname Nachname <vorname@uni.example> <privat@example.org>

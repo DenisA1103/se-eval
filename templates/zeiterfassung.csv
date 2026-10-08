@@ -1,0 +1,3 @@
+datum;person;stunden;feature;taetigkeit
+# Täglich ausfüllen, 15-Minuten-Raster (0,25 h). person = Name wie in der Mailmap. feature = F-Nr. oder "Sonstiges".
+2026-10-16;Vorname Nachname;1,5;F-01;Implementierung

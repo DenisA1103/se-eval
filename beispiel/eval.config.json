@@ -1,0 +1,101 @@
+{
+  "planVersion": "1.0-probelauf",
+  "teams": {
+    "team-a": {
+      "name": "Beispielteam A",
+      "repo": "repos/sample-app",
+      "branch": "main",
+      "arbeitsweise": {
+        "P1": "agentisch"
+      },
+      "uxLabel": {
+        "P1": "A"
+      }
+    },
+    "team-b": {
+      "name": "Beispielteam B",
+      "repo": "repos/sample-app-b",
+      "branch": "main",
+      "arbeitsweise": {
+        "P1": "klassisch"
+      },
+      "uxLabel": {
+        "P1": "B"
+      }
+    }
+  },
+  "sprints": [
+    {
+      "id": "p1-s1",
+      "phase": "P1",
+      "start": "2026-10-16",
+      "stichtag": "2026-10-23T12:00:00+02:00"
+    }
+  ],
+  "scope": {
+    "app": [
+      "src/**/*.{ts,tsx}",
+      "app/**/*.{ts,tsx}",
+      "components/**/*.{ts,tsx}",
+      "lib/**/*.{ts,tsx}"
+    ],
+    "tests": [
+      "**/*.test.{ts,tsx}",
+      "**/*.spec.{ts,tsx}",
+      "**/__tests__/**/*.{ts,tsx}",
+      "tests/**/*.{ts,tsx}",
+      "e2e/**/*.{ts,tsx}"
+    ],
+    "core": [
+      "src/lib/**/*.ts",
+      "lib/**/*.ts"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "**/*.config.{ts,mts,js,mjs,cjs}",
+      "**/se-eval.*"
+    ]
+  },
+  "testTypes": {
+    "integration": [
+      "**/*.int.test.{ts,tsx}",
+      "tests/integration/**"
+    ],
+    "e2e": [
+      "e2e/**"
+    ]
+  },
+  "tests": {
+    "runs": 3,
+    "timeoutMinutes": 15
+  },
+  "mutation": {
+    "enabled": true,
+    "timeoutMinutes": 10,
+    "strykerVersion": "10.0.0"
+  },
+  "static": {
+    "complexityThreshold": 15,
+    "duplicateMinTokens": 50
+  },
+  "git": {
+    "exclude": [
+      "package-lock.json",
+      "pnpm-lock.yaml",
+      "yarn.lock",
+      "next-env.d.ts",
+      "public/**",
+      "**/*.min.js",
+      "**/*.snap",
+      "coverage/**"
+    ],
+    "aiCoAuthorPattern": "claude|anthropic|copilot|cursor|chatgpt|openai|codex|gemini",
+    "featureIdPattern": "F-\\d+"
+  },
+  "installCommand": [
+    "npm",
+    "ci",
+    "--no-audit",
+    "--no-fund"
+  ]
+}
