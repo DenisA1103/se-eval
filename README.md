@@ -209,4 +209,3 @@ Vor Projektstart wird der Stand als `v1.0` getaggt. Danach gilt:
 ## Entstehung
 
 Das Tool wurde agentisch mit Claude Code entwickelt (Vorgabe des Dozenten: „könnt ihr vibecoden“) und vom Team geprüft. Es ist selbst nicht Gegenstand der Evaluation.
-# se-eval
