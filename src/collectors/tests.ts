@@ -277,6 +277,9 @@ export function writeWrapperConfig(
       reportsDirectory: "coverage-se-eval",
       thresholds: {},
       clean: true,
+      // Vitest schreibt standardmäßig keinen Coverage-Bericht, sobald ein Test fehlschlägt.
+      // Rote Tests zählen laut Plan mit, die Coverage soll trotzdem gemessen werden.
+      reportOnFailure: true,
     },
   };
   const text = `// Automatisch erzeugt von se-eval. Nicht ins Team-Repo übernehmen.

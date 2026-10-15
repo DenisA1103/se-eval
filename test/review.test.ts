@@ -6,10 +6,11 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { withoutSecrets } from "../src/lib/exec.js";
 import { githubAuthEnv } from "../src/snapshot.js";
-import { relativeToRepo, testOutcomes, type VitestJson } from "../src/collectors/tests.js";
+import { relativeToRepo, testOutcomes, WRAPPER_CONFIG, writeWrapperConfig, type VitestJson } from "../src/collectors/tests.js";
 import { gitCollector } from "../src/collectors/git.js";
 import { loadConfig } from "../src/config.js";
 import { measure } from "../src/measure.js";
@@ -111,5 +112,19 @@ describe("Snapshot", () => {
     await expect(measure(loadConfig(writeCfg(dir, repo, "2026-10-24T12:00:00+02:00")), opts)).rejects.toThrow(/Stichtag .* geändert/);
     // Mit --refresh ist es erlaubt
     await expect(measure(loadConfig(writeCfg(dir, repo, "2026-10-24T12:00:00+02:00")), { ...opts, refresh: true })).resolves.toBeTruthy();
+  });
+});
+
+describe("Coverage bei roten Tests", () => {
+  it("die Wrapper-Konfiguration erzwingt einen Coverage-Bericht auch bei fehlgeschlagenen Tests", async () => {
+    const dir = tmp();
+    writeWrapperConfig(dir, { app: ["src/**/*.ts"], tests: ["**/*.test.ts"], exclude: [] }, ["e2e/**"]);
+    const mod = (await import(pathToFileURL(join(dir, WRAPPER_CONFIG)).href)) as {
+      default: (env: unknown) => Promise<{ test: { coverage: Record<string, unknown> } }>;
+    };
+    const cfg = await mod.default({});
+    // Ohne reportOnFailure liefert Vitest bei einem einzigen roten Test gar keine Coverage
+    expect(cfg.test.coverage.reportOnFailure).toBe(true);
+    expect(cfg.test.coverage.thresholds).toEqual({});
   });
 });
