@@ -112,7 +112,7 @@ Vorlage: `eval.config.example.json`. Wichtigste Felder:
 
 - `planVersion` – Version des Evaluationsplans; steht in jedem Ergebnis.
 - `teams.<id>` – `name`, `repo` (URL oder lokaler Pfad), `github` (`owner/repo`, optional), `branch`, `arbeitsweise` je Phase, `uxLabel` je Phase (neutrale Bezeichnung im UX-Test).
-- `sprints[]` – `id`, `phase`, `start` (JJJJ-MM-TT, 00:00 Uhr Berlin), `stichtag` (mit Uhrzeit **und** Zeitzone, z. B. `2026-10-23T12:00:00+02:00`; ab 25.10. gilt `+01:00`).
+- `sprints[]` – `id`, `phase`, `start` (JJJJ-MM-TT, 00:00 Uhr Berlin), `stichtag` (mit Uhrzeit **und** Zeitzone, z. B. `2026-10-23T12:00:00+02:00`; ab 25.10. gilt `+01:00`). Beginnt ein Sprint am Stichtag-Tag des vorherigen, überlappen sich die Fenster nicht: Commits und PRs bis einschließlich Stichtag (Freitag 12:00) zählen zum endenden Sprint, danach zum neuen. Die tagesgenaue Zeiterfassung des Stichtag-Tags zählt zum Sprint, der an diesem Tag beginnt; beginnt keiner (Code-Freeze), zum endenden Sprint.
 - `scope` – Glob-Muster für `app`, `tests`, `core`, `exclude`.
 - `testTypes` – Muster für `integration` und `e2e`.
 - `tests.runs`, `tests.timeoutMinutes`, `mutation.*`, `static.*`, `git.*`, `installCommand`.

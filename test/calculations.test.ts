@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { countSloc, matcher } from "../src/lib/files.js";
 import { median, p90, perKloc, quantile, ratio } from "../src/lib/stats.js";
-import { localDay, localMidnight, sprintWindow, tzOffsetMinutes } from "../src/lib/time.js";
+import { dayInSprint, localDay, localMidnight, sprintWindow, tzOffsetMinutes } from "../src/lib/time.js";
 import { parseDay, parseNumber } from "../src/lib/csv.js";
 import { susScore } from "../src/ux.js";
 import { summarizeMutationReport } from "../src/collectors/mutation.js";
@@ -70,8 +70,35 @@ describe("Zeitfenster", () => {
     expect(localDay(Date.parse("2026-10-16T22:30:00Z"))).toBe("2026-10-17");
   });
   it("Sprintfenster vom Start bis zum Stichtag", () => {
-    const w = sprintWindow({ id: "s", phase: "P1", start: "2026-10-16", stichtag: "2026-10-23T12:00:00+02:00" });
+    const s = { id: "s", phase: "P1", start: "2026-10-16", stichtag: "2026-10-23T12:00:00+02:00" };
+    const w = sprintWindow(s, [s]);
     expect(w.to - w.from).toBe(7.5 * 24 * 3600_000);
+  });
+
+  // Aufeinanderfolgende Sprints: Stichtag Fr 12:00, nächster Sprint startet am selben Freitag
+  const s1 = { id: "s1", phase: "P1", start: "2026-10-23", stichtag: "2026-10-30T12:00:00+01:00" };
+  const s2 = { id: "s2", phase: "P1", start: "2026-10-30", stichtag: "2026-11-06T12:00:00+01:00" };
+  const s3 = { id: "s3", phase: "P1", start: "2026-11-06", stichtag: "2026-11-13T12:00:00+01:00" };
+  const all = [s1, s2, s3];
+
+  it("Sprintfenster überlappen sich nicht: Freitagvormittag gehört zum endenden Sprint", () => {
+    const w1 = sprintWindow(s1, all);
+    const w2 = sprintWindow(s2, all);
+    const fridayMorning = Date.parse("2026-10-30T10:00:00+01:00");
+    const fridayAfternoon = Date.parse("2026-10-30T15:00:00+01:00");
+    const atDeadline = Date.parse(s1.stichtag);
+    expect(fridayMorning >= w1.from && fridayMorning <= w1.to).toBe(true);
+    expect(fridayMorning >= w2.from && fridayMorning <= w2.to).toBe(false);
+    expect(fridayAfternoon >= w2.from && fridayAfternoon <= w2.to).toBe(true);
+    // Genau 12:00 zählt nur zum endenden Sprint
+    expect(atDeadline <= w1.to && atDeadline >= w2.from).toBe(false);
+    expect(w2.from).toBe(w1.to + 1);
+  });
+
+  it("ordnet jeden Tag der Zeiterfassung höchstens einem Sprint zu", () => {
+    const days = ["2026-10-22", "2026-10-23", "2026-10-29", "2026-10-30", "2026-11-06", "2026-11-13", "2026-11-14"];
+    const owner = days.map((d) => all.filter((s) => dayInSprint(d, s, all)).map((s) => s.id));
+    expect(owner).toEqual([[], ["s1"], ["s1"], ["s2"], ["s3"], ["s3"], []]);
   });
 });
 

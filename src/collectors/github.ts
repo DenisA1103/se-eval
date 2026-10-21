@@ -55,7 +55,7 @@ export const githubCollector: Collector<GithubMetrics> = {
   async collect(ctx) {
     if (!ctx.team.github) return skipped('Kein "github" (owner/repo) für das Team konfiguriert');
     const token = process.env.GITHUB_TOKEN;
-    const w = sprintWindow(ctx.sprint);
+    const w = sprintWindow(ctx.sprint, ctx.config.sprints);
     const warnings: string[] = token ? [] : ["Ohne GITHUB_TOKEN: nur öffentliche Repos, 60 Anfragen/Stunde"];
 
     const pulls: PullListItem[] = [];

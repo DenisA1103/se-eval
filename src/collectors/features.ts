@@ -17,7 +17,7 @@ import { type EvalConfig, type SprintConfig, sprintsUpTo } from "../config.js";
 import { Problems, parseDay, parseNumber, readCsv } from "../lib/csv.js";
 import { runOrThrow } from "../lib/exec.js";
 import { ratio, round, sum } from "../lib/stats.js";
-import { localDay, localMidnight, sprintWindow } from "../lib/time.js";
+import { dayInSprint, localDay, sprintWindow } from "../lib/time.js";
 import { parseLog } from "./git.js";
 import { type Collector, type CollectorContext, ok, skipped } from "./types.js";
 
@@ -210,10 +210,8 @@ export function loadTimeEntries(file: string): TimeEntry[] {
   return entries;
 }
 
-function inSprintDays(day: string, sprint: SprintConfig): boolean {
-  const t = localMidnight(day);
-  const w = sprintWindow(sprint);
-  return t >= w.from && t <= w.to;
+function inSprintDays(day: string, sprint: SprintConfig, allSprints: readonly SprintConfig[]): boolean {
+  return dayInSprint(day, sprint, allSprints);
 }
 
 export const effortCollector: Collector<EffortMetrics> = {
@@ -226,9 +224,10 @@ export const effortCollector: Collector<EffortMetrics> = {
     const entries = loadTimeEntries(file);
     const warnings: string[] = [];
     const phaseSprints = sprintsUpTo(ctx.config, ctx.sprint.id);
-    const sprintEntries = entries.filter((e) => inSprintDays(e.day, ctx.sprint));
-    const phaseEntries = entries.filter((e) => phaseSprints.some((s) => inSprintDays(e.day, s)));
-    const outside = entries.length - entries.filter((e) => ctx.config.sprints.some((s) => inSprintDays(e.day, s))).length;
+    const all = ctx.config.sprints;
+    const sprintEntries = entries.filter((e) => inSprintDays(e.day, ctx.sprint, all));
+    const phaseEntries = entries.filter((e) => phaseSprints.some((s) => inSprintDays(e.day, s, all)));
+    const outside = entries.length - entries.filter((e) => all.some((s) => inSprintDays(e.day, s, all))).length;
     if (outside > 0) warnings.push(`${outside} Zeiteintrag/-einträge liegen außerhalb aller Sprints und werden nicht gezählt`);
 
     const group = (list: TimeEntry[], key: (e: TimeEntry) => string) => {
@@ -283,7 +282,7 @@ async function plausibilityCheck(ctx: CollectorContext, entries: TimeEntry[]): P
     [...gitArgs, "log", "--use-mailmap", "--no-merges", `--format=\x1e%H\x1f%aN\x1f%aE\x1f%aI\x1f%cI\x1f%P\x1f%B`, ctx.commit, "--remotes"],
     { cwd: ctx.repoDir },
   );
-  const w = sprintWindow(ctx.sprint);
+  const w = sprintWindow(ctx.sprint, ctx.config.sprints);
   const commits = parseLog(res.stdout).filter((c) => c.authorTime >= w.from && c.authorTime <= w.to);
   const commitDays = new Map<string, number>();
   for (const c of commits) {
