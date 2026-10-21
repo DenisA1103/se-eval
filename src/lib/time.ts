@@ -2,6 +2,8 @@
  * Zeitfenster der Sprints.
  *
  * Ein Sprint umfasst alle Ereignisse ab `start` 00:00 Uhr (Zeitzone Europe/Berlin) bis zum Stichtag.
+ * Beginnt ein Sprint am Tag, an dem ein anderer Sprint seinen Stichtag hat (Freitag 12:00), beginnt
+ * sein Fenster erst nach diesem Stichtag. So zählt kein Ereignis in zwei Sprints.
  * Die Zeitzone wird über Intl korrekt einschließlich Sommer-/Winterzeit bestimmt.
  */
 import type { SprintConfig } from "../config.js";
@@ -32,8 +34,37 @@ export interface Window {
   to: number;
 }
 
-export function sprintWindow(sprint: SprintConfig): Window {
-  return { from: localMidnight(sprint.start), to: Date.parse(sprint.stichtag) };
+/**
+ * Zeitfenster eines Sprints für Ereignisse mit Zeitstempel (Commits, Pull Requests).
+ * `allSprints`: alle konfigurierten Sprints, damit sich aufeinanderfolgende Fenster nicht überlappen.
+ */
+export function sprintWindow(sprint: SprintConfig, allSprints: readonly SprintConfig[]): Window {
+  const to = Date.parse(sprint.stichtag);
+  let from = localMidnight(sprint.start);
+  for (const other of allSprints) {
+    if (other.id === sprint.id) continue;
+    const otherEnd = Date.parse(other.stichtag);
+    // Stichtag eines anderen Sprints liegt im eigenen Fenster → erst danach beginnen (1 ms später, da inWindow inklusiv ist)
+    if (otherEnd >= from && otherEnd < to) from = Math.max(from, otherEnd + 1);
+  }
+  return { from, to };
+}
+
+/**
+ * Gehört ein Kalendertag (tagesgenaue Zeiterfassung) zu einem Sprint?
+ * Ein Tageseintrag lässt sich nicht am Stichtag 12:00 teilen. Regel: Der Stichtag-Tag zählt zum Sprint,
+ * der an diesem Tag beginnt; beginnt an diesem Tag keiner (z. B. Code-Freeze), zählt er zum endenden Sprint.
+ * Damit gehört jeder Tag zu höchstens einem Sprint.
+ */
+export function dayInSprint(day: string, sprint: SprintConfig, allSprints: readonly SprintConfig[]): boolean {
+  const t = localMidnight(day);
+  const startDay = localMidnight(sprint.start);
+  const endDay = localMidnight(localDay(Date.parse(sprint.stichtag)));
+  if (t < startDay || t > endDay) return false;
+  if (t === endDay && t !== startDay) {
+    return !allSprints.some((o) => o.id !== sprint.id && localMidnight(o.start) === endDay);
+  }
+  return true;
 }
 
 export function inWindow(ts: number, w: Window): boolean {

@@ -86,7 +86,7 @@ export const gitCollector: Collector<GitMetrics> = {
 
     const all = await readCommits(repoDir, gitArgs, [commit], logFile);
     const isExcluded = matcher(config.git.exclude);
-    const w = sprintWindow(ctx.sprint);
+    const w = sprintWindow(ctx.sprint, config.sprints);
     const isBot = new RegExp(config.git.excludeAuthors, "i");
     const inSprintAll = all.filter((c) => inWindow(c.authorTime, w));
     // Bots (z. B. dependabot[bot], github-actions[bot]) sind keine Teammitglieder
