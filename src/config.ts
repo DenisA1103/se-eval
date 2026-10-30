@@ -83,10 +83,10 @@ const ConfigSchema = z.object({
       enabled: z.boolean().default(true),
       timeoutMinutes: z.number().positive().default(30),
       /** Gepinnte StrykerJS-Version, wird nur in die Arbeitskopie installiert */
-      strykerVersion: z.string().default("10.0.0"),
+      strykerVersion: z.string().default("10.1.1"),
       concurrency: z.number().int().positive().optional(),
     })
-    .default({ enabled: true, timeoutMinutes: 30, strykerVersion: "10.0.0" }),
+    .default({ enabled: true, timeoutMinutes: 30, strykerVersion: "10.1.1" }),
   static: z
     .object({
       /** Ab dieser kognitiven Komplexität gilt eine Funktion als zu komplex (Campbell 2018: 15) */

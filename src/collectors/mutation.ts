@@ -103,6 +103,7 @@ export const mutationCollector: Collector<MutationMetrics> = {
     }
     const metrics = summarizeMutationReport(JSON.parse(readFileSync(reportFile, "utf8")) as MutationReport);
     if (metrics.errors > 0) warnings.push(`${metrics.errors} Mutanten mit Compile-/Laufzeitfehler (nicht im Score enthalten)`);
+    warnings.push(...mutationPlausibilityWarnings(metrics));
     return ok(metrics, { "@stryker-mutator/core": v, "@stryker-mutator/vitest-runner": v }, warnings);
   },
 };
@@ -136,4 +137,21 @@ export function summarizeMutationReport(report: MutationReport): MutationMetrics
     scoreCoveredPercent: ratio(detected * 100, detected + survived),
     files: Object.keys(report.files).length,
   };
+}
+
+/**
+ * Plausibilitätsprüfung (nur Hinweis, Werte bleiben unverändert): Ein Score auf abgedecktem Code nahe 0 %
+ * bei vielen abgedeckten Mutanten deutet eher auf ein Messproblem als auf wirkungslose Tests hin.
+ * Anlass: StrykerJS 10.0.0 unterstützt Vitest 5 nicht; Mutanten wurden nicht aktiviert und zählten als
+ * "Survived" (Probemessung 29.10.2026, Team 2: 2,5 % statt 83 % in der Stichprobe).
+ */
+export function mutationPlausibilityWarnings(m: MutationMetrics): string[] {
+  const covered = m.killed + m.timeout + m.survived;
+  if (covered >= 50 && m.scoreCoveredPercent !== null && m.scoreCoveredPercent < 10) {
+    return [
+      `Mutation Score auf abgedecktem Code auffällig niedrig (${m.scoreCoveredPercent} % bei ${covered} abgedeckten Mutanten) – ` +
+        "möglicherweise Messproblem (Kompatibilität StrykerJS/Vitest prüfen, raw/mutation-stryker.log), bitte vor Verwendung prüfen",
+    ];
+  }
+  return [];
 }

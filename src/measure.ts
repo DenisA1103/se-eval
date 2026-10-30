@@ -5,7 +5,7 @@
  * laufen weiter. Alle Ergebnisse enthalten Snapshot-Commit, Konfigurations-Hash und Werkzeugversionen,
  * damit jede Zahl nachgerechnet werden kann.
  */
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { effortCollector, featuresCollector } from "./collectors/features.js";
 import { gitCollector } from "./collectors/git.js";
@@ -53,6 +53,31 @@ export interface Manifest {
   startedAt: string;
   finishedAt: string;
   collectors: Record<string, { status: string; reason?: string }>;
+}
+
+/**
+ * Collector-Status für manifest.json: Bei Teilmessungen (--only/--skip, z. B. Mutation Testing getrennt
+ * nach der Freitagsmessung) bleiben die Einträge der übrigen Collector aus der vorherigen Messung erhalten,
+ * sofern sie denselben Snapshot-Commit betrifft. Bei anderem Commit zählt nur der neue Lauf.
+ */
+export function mergeCollectorStatuses(
+  previous: Pick<Manifest, "commit" | "collectors"> | null,
+  commit: string,
+  current: Manifest["collectors"],
+): Manifest["collectors"] {
+  const merged = previous && previous.commit === commit ? { ...previous.collectors, ...current } : { ...current };
+  const order = COLLECTORS.map((c) => c.name);
+  const rank = (n: string) => (order.indexOf(n) === -1 ? order.length : order.indexOf(n));
+  return Object.fromEntries(Object.entries(merged).sort(([a], [b]) => rank(a) - rank(b)));
+}
+
+function readManifest(file: string): Manifest | null {
+  if (!existsSync(file)) return null;
+  try {
+    return JSON.parse(readFileSync(file, "utf8")) as Manifest;
+  } catch {
+    return null;
+  }
 }
 
 export function selectCollectors(only?: string[], skip?: string[]): Collector<any>[] {
@@ -157,7 +182,7 @@ export async function measure(loaded: LoadedConfig, opts: MeasureOptions): Promi
     platform: `${process.platform}-${process.arch}`,
     startedAt,
     finishedAt: new Date().toISOString(),
-    collectors: statuses,
+    collectors: mergeCollectorStatuses(readManifest(join(resultsDir, "manifest.json")), info.commit, statuses),
   };
   writeFileSync(join(resultsDir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
   if (!opts.keepWorkdir) rmSync(join(baseDir, "work", opts.teamId, sprint.id), { recursive: true, force: true });

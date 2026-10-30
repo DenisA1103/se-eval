@@ -72,7 +72,7 @@
   "mutation": {
     "enabled": true,
     "timeoutMinutes": 10,
-    "strykerVersion": "10.0.0"
+    "strykerVersion": "10.1.1"
   },
   "static": {
     "complexityThreshold": 15,
