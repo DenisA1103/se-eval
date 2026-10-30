@@ -8,7 +8,8 @@ import { median, p90, perKloc, quantile, ratio } from "../src/lib/stats.js";
 import { dayInSprint, localDay, localMidnight, sprintWindow, tzOffsetMinutes } from "../src/lib/time.js";
 import { parseDay, parseNumber } from "../src/lib/csv.js";
 import { susScore } from "../src/ux.js";
-import { summarizeMutationReport } from "../src/collectors/mutation.js";
+import { mutationPlausibilityWarnings, summarizeMutationReport } from "../src/collectors/mutation.js";
+import { mergeCollectorStatuses } from "../src/measure.js";
 import { branchNameFromMerge, normalizeRenamePath, parseLog, parseNumstat } from "../src/collectors/git.js";
 import { countE2eCases } from "../src/collectors/tests.js";
 
@@ -137,6 +138,18 @@ describe("Mutation Score", () => {
     expect(m.errors).toBe(1);
     expect(m.ignored).toBe(1);
   });
+
+  it("warnt bei auffällig niedrigem Score auf abgedecktem Code (Messproblem), sonst nicht", () => {
+    const mutants = (killed: number, survived: number) => ({
+      files: { "a.ts": { mutants: [...Array(killed).fill({ status: "Killed" }), ...Array(survived).fill({ status: "Survived" })] } },
+    });
+    // Muster der Probemessung 29.10.: 51 von 2.067 abgedeckten Mutanten erkannt (2,47 %)
+    expect(mutationPlausibilityWarnings(summarizeMutationReport(mutants(51, 2016)))).toHaveLength(1);
+    expect(mutationPlausibilityWarnings(summarizeMutationReport(mutants(0, 112)))).toHaveLength(1);
+    // realistische Werte und zu kleine Stichproben: keine Warnung
+    expect(mutationPlausibilityWarnings(summarizeMutationReport(mutants(93, 19)))).toEqual([]);
+    expect(mutationPlausibilityWarnings(summarizeMutationReport(mutants(0, 10)))).toEqual([]);
+  });
 });
 
 describe("Git-Auswertung", () => {
@@ -178,5 +191,20 @@ describe("E2E-Zählung", () => {
       `test.describe("x", () => {\n  test("eins", async () => {});\n  test.skip("zwei", async () => {});\n  it('drei', () => {});\n});\n// test("auskommentiert") zählt nicht\nconst latest = 1;\n`,
     );
     expect(countE2eCases(dir, ["a.spec.ts"])).toBe(3);
+  });
+});
+
+describe("Manifest bei Teilmessungen", () => {
+  const vorher = { commit: "abc", collectors: { static: { status: "ok" }, tests: { status: "ok" }, mutation: { status: "skipped" } } };
+
+  it("behält die übrigen Collector bei gleichem Snapshot-Commit und ersetzt den neu gemessenen", () => {
+    const merged = mergeCollectorStatuses(vorher, "abc", { mutation: { status: "ok" } });
+    expect(merged).toEqual({ static: { status: "ok" }, tests: { status: "ok" }, mutation: { status: "ok" } });
+    expect(Object.keys(merged)).toEqual(["static", "tests", "mutation"]);
+  });
+
+  it("verwirft alte Einträge bei anderem Commit oder ohne vorherige Messung", () => {
+    expect(mergeCollectorStatuses(vorher, "def", { mutation: { status: "ok" } })).toEqual({ mutation: { status: "ok" } });
+    expect(mergeCollectorStatuses(null, "abc", { git: { status: "ok" } })).toEqual({ git: { status: "ok" } });
   });
 });

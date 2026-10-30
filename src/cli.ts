@@ -98,12 +98,14 @@ program
   .option("--keep-workdir", "Arbeitskopie unter work/ nach der Messung behalten", false)
   .action(async (opts: { team: string; sprint: string; only?: string[]; skip?: string[]; refresh: boolean; keepWorkdir: boolean }) => {
     const loaded = loadConfig(program.opts().config);
-    selectCollectors(opts.only, opts.skip); // frühe Prüfung der Namen
+    // frühe Prüfung der Namen; gezählt werden nur Fehler der in diesem Lauf gemessenen Collector
+    // (manifest.json enthält bei Teilmessungen auch die Status früherer Läufe)
+    const selected = new Set(selectCollectors(opts.only, opts.skip).map((c) => c.name));
     const teams = opts.team === "all" ? Object.keys(loaded.config.teams) : [opts.team];
     let failed = 0;
     for (const teamId of teams) {
       const manifest = await measure(loaded, { teamId, sprintId: opts.sprint, only: opts.only, skip: opts.skip, refresh: opts.refresh, keepWorkdir: opts.keepWorkdir, log });
-      failed += Object.values(manifest.collectors).filter((c) => c.status === "failed").length;
+      failed += Object.entries(manifest.collectors).filter(([name, c]) => selected.has(name) && c.status === "failed").length;
       log(`Ergebnisse: results/${teamId}/${opts.sprint}/`);
     }
     if (failed > 0) {
